@@ -1,0 +1,22 @@
+{
+    "name": "xola/reportwriter-bundle",
+    "description": "A generic report writer",
+    "require": {
+        "php": ">=5.3.2",
+        "symfony/framework-bundle": "~2.1",
+        "psr/log": "~1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rushi Vishavadia",
+            "email": "rushi@xola.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Xola\\ReportWriterBundle": ""
+        }
+    },
+    "target-dir": "Xola/ReportWriterBundle"
+}

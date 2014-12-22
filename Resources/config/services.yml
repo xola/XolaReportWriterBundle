@@ -1,0 +1,9 @@
+parameters:
+    csvwriter.service.class: Xola\ReportWriterBundle\Service\CSVWriter
+
+services:
+    csvwriter:
+        class: %csvwriter.service.class%
+        arguments: [ @service_container, @logger ]
+        tags:
+              - { name: monolog.logger, channel: csvwriter }
