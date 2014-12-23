@@ -80,6 +80,13 @@ class CSVWriter
         return $found;
     }
 
+    /**
+     * Write the compiled csv to disk and return the file name
+     *
+     * @param array $sortedHeaders An array of sorted headers
+     *
+     * @return string The csv filename where the data was written
+     */
     public function prepare($sortedHeaders)
     {
         $csvFile = $this->filename . '.csv';
