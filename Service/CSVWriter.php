@@ -101,12 +101,15 @@ class CSVWriter
             } else {
                 foreach ($header as $headerName => $subHeaders) {
                     $headerRows[0][] = $headerName;
-                    foreach ($subHeaders as $idx => $subHeader) {
-                        if ($idx > 0) {
-                            // Add extra empty cells next to the first row header like a faux horizon cell merge
-                            $headerRows[0][] = '';
-                        }
-                        $headerRows[1][] = $subHeader;
+                    $headerRows[1] = array_merge($headerRows[1], $subHeaders);
+                    if (count($subHeaders) > 1) {
+                        /**
+                         * We need to insert empty cells for the first row of headers to account for the second row
+                         * this acts as a faux horizontal cell merge in a csv file
+                         * | Header 1 | <---- 2 extra cells ----> |
+                         * | Sub 1    | Subheader 2 | Subheader 3 |
+                         */
+                        $headerRows[0] = array_merge($headerRows[0], array_fill(0, count($subHeaders)-1, ''));
                     }
                 }
             }
