@@ -9,12 +9,12 @@ class CSVWriter
 {
     protected static $headers = [];
     protected $logger;
-    private $filename;
+    private $cacheFile;
 
     public function __construct(Container $container, LoggerInterface $logger)
     {
         $this->logger = $logger;
-        $this->filename = tempnam($container->get('kernel')->getCacheDir(), 'data_export');
+        $this->cacheFile = tempnam($container->get('kernel')->getCacheDir(), 'data_export');
     }
 
     /**
@@ -25,7 +25,7 @@ class CSVWriter
     public function cacheData($data)
     {
         $line = json_encode($data) . "\n";
-        file_put_contents($this->filename, $line, FILE_APPEND);
+        file_put_contents($this->cacheFile, $line, FILE_APPEND);
     }
 
     /**
@@ -89,7 +89,7 @@ class CSVWriter
      */
     public function prepare($sortedHeaders)
     {
-        $csvFile = $this->filename . '.csv';
+        $csvFile = $this->cacheFile . '.csv';
         $handle = fopen($csvFile, 'w');
 
         // Generate a csv version of the multi-row headers to write to disk
@@ -119,10 +119,14 @@ class CSVWriter
         fputcsv($handle, $headerRows[1]);
 
         // TODO: Track memory usage
-        $file = new \SplFileObject($this->filename);
+        $file = new \SplFileObject($this->cacheFile);
         while (!$file->eof()) {
             $csvRow = [];
             $row = json_decode($file->current(), true);
+            if (!is_array($row)) {
+                // Invalid json data -- don't process this row
+                continue;
+            }
             foreach ($sortedHeaders as $idx => $header) {
                 if (!is_array($header)) {
                     $csvRow[] = (isset($row[$header])) ? $row[$header] : '';
@@ -140,6 +144,9 @@ class CSVWriter
             fputcsv($handle, $csvRow);
             $file->next();
         }
+
+        $file = null; // Get rid of the file handle that SplFileObject has on cache file
+        unlink($this->cacheFile);
 
         fclose($handle);
 
