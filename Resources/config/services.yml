@@ -1,5 +1,7 @@
 parameters:
     csvwriter.service.class: Xola\ReportWriterBundle\Service\CSVWriter
+    excelwriter.service.class: Xola\ReportWriterBundle\Service\ExcelWriter
+    phpexcel.class:  Xola\ReportWriterBundle\PHPExcelFactory
 
 services:
     csvwriter:
@@ -7,3 +9,12 @@ services:
         arguments: [ @service_container, @logger ]
         tags:
               - { name: monolog.logger, channel: csvwriter }
+
+    excelwriter:
+        class: %excelwriter.service.class%
+        arguments: [ @service_container, @logger, @phpexcel ]
+        tags:
+              - { name: monolog.logger, channel: excelwriter }
+
+    phpexcel:
+        class: %phpexcel.class%
