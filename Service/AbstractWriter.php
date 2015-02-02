@@ -14,15 +14,17 @@ abstract class AbstractWriter
         $this->logger = $logger;
     }
 
-
     /**
      * Write the formatted order data to disk, so we can fetch it later
      *
-     * @param $data
+     * @param array $data An array of data that will cached online per row
      */
     public function cacheData($filename, $data)
     {
-        $line = json_encode($data) . "\n";
+        $line = '';
+        foreach ($data as $row) {
+            $line .= json_encode($row) . "\n";
+        }
         file_put_contents($filename, $line, FILE_APPEND);
     }
 
