@@ -11,6 +11,7 @@ class ExcelWriter extends AbstractWriter
     private $phpexcelService;
     /* @var \PHPExcel $handle */
     private $handle;
+    private $currentRow = 1;
 
     public function __construct(Container $container, LoggerInterface $logger, PHPExcelFactory $phpExcel)
     {
@@ -18,18 +19,20 @@ class ExcelWriter extends AbstractWriter
         $this->phpexcelService = $phpExcel;
     }
 
-    public function setup()
+    /**
+     * Initialize the excel writer
+     *
+     * @param string $author The author/creator of this file
+     * @param string $title  The title of this file
+     */
+    public function setup($author = '', $title = '')
     {
         $this->handle = $this->phpexcelService->createPHPExcelObject();
+        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
 
-        /*
-        $excel->getProperties()->setCreator("Creator")
-            ->setTitle("Title: Office 2005 XLSX Test Document")
-            ->setSubject("Subject: Office 2005 XLSX Test Document")
-            ->setDescription("Description: Test document for Office 2005 XLSX, generated using PHP classes.")
-            ->setKeywords("office 2005 openxml php")
-            ->setCategory("Test result file");
-        */
+        $this->handle->getProperties()
+            ->setCreator($author)
+            ->setTitle($title);
     }
 
     public function setWorksheet($index, $title)
@@ -44,19 +47,18 @@ class ExcelWriter extends AbstractWriter
         $this->handle->getActiveSheet()->setTitle($title);
     }
 
-    public function prepare($cacheFile, $sortedHeaders)
+    public function writeHeaders($sortedHeaders)
     {
         $worksheet = $this->handle->getActiveSheet();
 
+        $initRow = $this->currentRow;
         $column = 'A';
         foreach ($sortedHeaders as $idx => $header) {
-            $cell = $column . '1';
+            $cell = $column . $initRow;
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
                 // Assumption that all headers are multi-row, so we merge the rows of non-multirow headers
-                $worksheet->mergeCells($column . '1:' . $column . '2');
-                //$worksheet->getStyle($cell)->getFill()->setFillType(\PHPExcel_Style_Fill::FILL_SOLID);
-                //$worksheet->getStyle($cell)->getFill()->getStartColor()->setRGB('EFEFEF');
+                $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow+1));
                 $column++;
             } else {
                 // This is a multi-row header, the first row consists of one value merged across several cells and the
@@ -70,56 +72,66 @@ class ExcelWriter extends AbstractWriter
                 // Figure out how many cells across to merge
                 $mergeLength = count($header[$headerName]) - 1;
                 $mergeDestination = $this->incrementColumn($column, $mergeLength);
-                $worksheet->mergeCells($column . '1:' . $mergeDestination . '1');
-
-                //$worksheet->getStyle($column . '1:' . $mergeDestination . '2')->getFill()->setFillType(\PHPExcel_Style_Fill::FILL_SOLID);
-                //$worksheet->getStyle($column . '1:' . $mergeDestination . '2')->getFill()->getStartColor()->setRGB('EFEFEF');
+                $worksheet->mergeCells($column . $initRow . ':' . $mergeDestination . $initRow);
 
                 // Now write the children's values onto the second row
                 foreach ($header[$headerName] as $subHeaderName) {
-                    $worksheet->setCellValue($column . '2', $subHeaderName);
+                    $worksheet->setCellValue($column . ($initRow + 1), $subHeaderName);
                     $column++;
                 }
             }
         }
 
-        // TODO: Track memory usage
+        $this->currentRow += 2;
+    }
+
+    public function prepare($cacheFile, $sortedHeaders)
+    {
+        $this->writeHeaders($sortedHeaders);
+
         $file = new \SplFileObject($cacheFile);
-        $rowIdx = 0;
-        $excelRow = [];
         while (!$file->eof()) {
             $dataRow = json_decode($file->current(), true);
-            if (!is_array($dataRow)) {
-                // Invalid json data -- don't process this row
-                continue;
-            }
-
-            foreach ($sortedHeaders as $idx => $header) {
-                if (!is_array($header)) {
-                    $excelRow[$rowIdx][] = (isset($dataRow[$header])) ? $dataRow[$header] : null;
-                } else {
-                    // Multi-row header, so we need to set all values
-                    $nestedHeaderName = array_keys($header)[0];
-                    $nestedHeaders = $header[$nestedHeaderName];
-
-                    foreach ($nestedHeaders as $nestedHeader) {
-                        $excelRow[$rowIdx][] = (isset($dataRow[$nestedHeaderName][$nestedHeader])) ? $dataRow[$nestedHeaderName][$nestedHeader] : null;
-                    }
-                }
-            }
-
-            $rowIdx++;
+            $this->writeRow($dataRow, $sortedHeaders);
             $file->next();
         }
 
-        // Write the entire worksheet. TODO: Maybe too much data. perf.
-        $worksheet->fromArray($excelRow, null, 'A3');
-
-        // Freeze the headers
-        $worksheet->freezePane('A3');
-
         $file = null; // Get rid of the file handle that SplFileObject has on cache file
         unlink($cacheFile);
+    }
+
+    public function writeRows($rows, $headers)
+    {
+        foreach ($rows as $row) {
+            $this->writeRow($row, $headers);
+        }
+    }
+
+    public function writeRow($dataRow, $headers)
+    {
+        if (!is_array($dataRow)) {
+            // Invalid data -- don't process this row
+            return;
+        }
+
+        $rowIdx = $this->currentRow;
+        $excelRow = [];
+        foreach ($headers as $idx => $header) {
+            if (!is_array($header)) {
+                $excelRow[$rowIdx][] = (isset($dataRow[$header])) ? $dataRow[$header] : null;
+            } else {
+                // Multi-row header, so we need to set all values
+                $nestedHeaderName = array_keys($header)[0];
+                $nestedHeaders = $header[$nestedHeaderName];
+
+                foreach ($nestedHeaders as $nestedHeader) {
+                    $excelRow[$rowIdx][] = (isset($dataRow[$nestedHeaderName][$nestedHeader])) ? $dataRow[$nestedHeaderName][$nestedHeader] : null;
+                }
+            }
+        }
+
+        $this->handle->getActiveSheet()->fromArray($excelRow, null, 'A' . $rowIdx);
+        $this->currentRow++;
     }
 
     public function finalize($filename)
@@ -130,6 +142,38 @@ class ExcelWriter extends AbstractWriter
         // Write the file to disk
         $writer = $this->phpexcelService->createWriter($this->handle, 'Excel2007');
         $writer->save($filename);
+    }
+
+    /**
+     * Write ad-hoc set of rows without any dependence on headers
+     *
+     * @param array  $lines
+     * @param int    $row
+     * @param string $column
+     */
+    public function writeRawRows(array $lines, $column = 'A', $row = null)
+    {
+        if (is_null($row)) {
+            $row = $this->currentRow;
+        }
+        $this->handle->getActiveSheet()->fromArray($lines, null, $column . $row);
+        $this->currentRow += count($lines);
+    }
+
+    public function freezePane($cell = '')
+    {
+        if (empty($cell)) {
+            $cell = 'A2';
+        }
+        $this->handle->getActiveSheet()->freezePane($cell);
+    }
+
+    public function addPageBreak($cell = '')
+    {
+        if (empty($cell)) {
+            $cell = 'A' . ($this->currentRow - 2);
+        }
+        $this->handle->getActiveSheet()->setBreak($cell, \PHPExcel_Worksheet::BREAK_ROW);
     }
 
     /**
