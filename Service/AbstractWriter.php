@@ -9,7 +9,7 @@ abstract class AbstractWriter
 {
     protected $logger;
 
-    public function __construct(Container $container, LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
     }

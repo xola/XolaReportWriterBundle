@@ -2,21 +2,21 @@
 
 namespace Xola\ReportWriterBundle\Service;
 
-use Symfony\Component\DependencyInjection\Container;
 use Psr\Log\LoggerInterface;
 use Xola\ReportWriterBundle\PHPExcelFactory;
 
 class ExcelWriter extends AbstractWriter
 {
-    private $phpexcelService;
+    private $phpexcel;
     /* @var \PHPExcel $handle */
     private $handle;
     private $currentRow = 1;
 
-    public function __construct(Container $container, LoggerInterface $logger, PHPExcelFactory $phpExcel)
+    public function __construct(LoggerInterface $logger, PHPExcelFactory $phpExcel)
     {
-        $this->logger = $logger;
-        $this->phpexcelService = $phpExcel;
+        parent::__construct($logger);
+        $this->phpexcel = $phpExcel;
+        $this->handle = $this->phpexcel->createPHPExcelObject();
     }
 
     /**
@@ -27,7 +27,6 @@ class ExcelWriter extends AbstractWriter
      */
     public function setup($author = '', $title = '')
     {
-        $this->handle = $this->phpexcelService->createPHPExcelObject();
         $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
 
         $this->handle->getProperties()
@@ -35,6 +34,12 @@ class ExcelWriter extends AbstractWriter
             ->setTitle($title);
     }
 
+    /**
+     * Create a new worksheet, and set it as the active one
+     * @param int    $index Location at which to create the sheet (NULL for last)
+     * @param string $title The title of the sheet
+     * @throws \PHPExcel_Exception
+     */
     public function setWorksheet($index, $title)
     {
         $this->handle->createSheet($index);
@@ -42,11 +47,22 @@ class ExcelWriter extends AbstractWriter
         $this->setSheetTitle($title);
     }
 
+    /**
+     * Set the title for the current active worksheet
+     *
+     * @param string $title
+     */
     public function setSheetTitle($title)
     {
         $this->handle->getActiveSheet()->setTitle($title);
     }
 
+    /**
+     * Write the headers (nested or otherwise) to the current active worksheet
+     *
+     * @param $sortedHeaders
+     * @throws \PHPExcel_Exception
+     */
     public function writeHeaders($sortedHeaders)
     {
         $worksheet = $this->handle->getActiveSheet();
@@ -85,9 +101,19 @@ class ExcelWriter extends AbstractWriter
         $this->currentRow += 2;
     }
 
-    public function prepare($cacheFile, $sortedHeaders)
+    /**
+     * Utility method that will data from the cached file per row and write it
+     *
+     * @param string $cacheFile     Filename where the fetched data can be cached from
+     * @param array  $sortedHeaders Headers to write sorted in the order you want them
+     * @param bool   $freezeHeaders True if you want to freeze headers (default: false)
+     */
+    public function prepare($cacheFile, $sortedHeaders, $freezeHeaders = false)
     {
         $this->writeHeaders($sortedHeaders);
+        if($freezeHeaders) {
+            $this->freezePanes();
+        }
 
         $file = new \SplFileObject($cacheFile);
         while (!$file->eof()) {
@@ -134,16 +160,6 @@ class ExcelWriter extends AbstractWriter
         $this->currentRow++;
     }
 
-    public function finalize($filename)
-    {
-        // Set active sheet index to the first sheet, so Excel opens this as the first sheet
-        $this->handle->setActiveSheetIndex(0);
-
-        // Write the file to disk
-        $writer = $this->phpexcelService->createWriter($this->handle, 'Excel2007');
-        $writer->save($filename);
-    }
-
     /**
      * Write ad-hoc set of rows without any dependence on headers
      *
@@ -160,20 +176,53 @@ class ExcelWriter extends AbstractWriter
         $this->currentRow += count($lines);
     }
 
-    public function freezePane($cell = '')
+    /**
+     * Freeze panes at the given location so they stay fixed upon scroll
+     *
+     * @param string $cell
+     * @throws \PHPExcel_Exception
+     */
+    public function freezePanes($cell = '')
     {
         if (empty($cell)) {
-            $cell = 'A2';
+            $cell = 'A3';
         }
         $this->handle->getActiveSheet()->freezePane($cell);
     }
 
-    public function addPageBreak($cell = '')
+    /**
+     * Add a horizonal (row) page break for print layout
+     *
+     * @param string $cell
+     * @throws \PHPExcel_Exception
+     */
+    public function addHorizontalPageBreak($cell = '')
     {
         if (empty($cell)) {
             $cell = 'A' . ($this->currentRow - 2);
         }
         $this->handle->getActiveSheet()->setBreak($cell, \PHPExcel_Worksheet::BREAK_ROW);
+    }
+
+    /**
+     * Save the current data into an .xlsx file
+     *
+     * @param $filename
+     * @throws \PHPExcel_Exception
+     */
+    public function finalize($filename)
+    {
+        // Set active sheet index to the first sheet, so Excel opens this as the first sheet
+        $this->handle->setActiveSheetIndex(0);
+
+        // Write the file to disk
+        $writer = $this->phpexcel->createWriter($this->handle, 'Excel2007');
+        $writer->save($filename);
+    }
+
+    public function resetCurrentRow($pos)
+    {
+        $this->currentRow = $pos;
     }
 
     /**
