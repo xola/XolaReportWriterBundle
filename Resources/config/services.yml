@@ -6,13 +6,13 @@ parameters:
 services:
     csvwriter:
         class: %csvwriter.service.class%
-        arguments: [ @service_container, @logger ]
+        arguments: [ @logger ]
         tags:
               - { name: monolog.logger, channel: csvwriter }
 
     excelwriter:
         class: %excelwriter.service.class%
-        arguments: [ @service_container, @logger, @phpexcel ]
+        arguments: [ @logger, @phpexcel ]
         tags:
               - { name: monolog.logger, channel: excelwriter }
 
