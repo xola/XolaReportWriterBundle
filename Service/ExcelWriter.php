@@ -36,6 +36,7 @@ class ExcelWriter extends AbstractWriter
 
     /**
      * Create a new worksheet, and set it as the active one
+     *
      * @param int    $index Location at which to create the sheet (NULL for last)
      * @param string $title The title of the sheet
      * @throws \PHPExcel_Exception
@@ -43,6 +44,7 @@ class ExcelWriter extends AbstractWriter
     public function setWorksheet($index, $title)
     {
         $this->handle->createSheet($index);
+        $this->resetCurrentRow(0);
         $this->handle->setActiveSheetIndex($index);
         $this->setSheetTitle($title);
     }
