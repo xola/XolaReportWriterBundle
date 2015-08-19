@@ -44,7 +44,7 @@ class ExcelWriter extends AbstractWriter
     public function setWorksheet($index, $title)
     {
         $this->handle->createSheet($index);
-        $this->resetCurrentRow(0);
+        $this->resetCurrentRow(1);
         $this->handle->setActiveSheetIndex($index);
         $this->setSheetTitle($title);
     }

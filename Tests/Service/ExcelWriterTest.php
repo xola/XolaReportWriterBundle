@@ -56,7 +56,10 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $this->phpExcelHandleMock->expects($this->once())->method('createSheet')->with($index);
         $this->phpExcelHandleMock->expects($this->once())->method('setActiveSheetIndex')->with($index);
 
-        $this->buildService()->setWorksheet($index, $title);
+        $service = $this->buildService();
+
+        $service->setWorksheet($index, $title);
+        $this->assertAttributeEquals(1, 'currentRow', $service, 'Row should be reset to 1 when switching active sheets');
     }
 
     public function testShouldWriteSingleRowHeaders()
