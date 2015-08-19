@@ -64,6 +64,9 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
 
     public function testShouldWriteSingleRowHeaders()
     {
+        $columnDimensionMock = $this->getMockBuilder('\PHPExcel_Worksheet_ColumnDimension')->disableOriginalConstructor()->getMock();
+        $columnDimensionMock->expects($this->exactly(4))->method('setAutoSize')->with(true);
+
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
         $worksheetMock->expects($this->exactly(4))->method('setCellValue')->withConsecutive(
             ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta']
@@ -71,6 +74,9 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $worksheetMock->expects($this->exactly(4))->method('mergeCells')->withConsecutive(
             ['A1:A2'], ['B1:B2'], ['C1:C2'], ['D1:D2']
         );
+        $worksheetMock->expects($this->exactly(4))->method('getColumnDimension')->withConsecutive(
+            ['A'], ['B'], ['C'], ['D']
+        )->willReturn($columnDimensionMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
 
         $headers = ['Alpha', 'Bravo', 'Gamma', 'Delta'];
@@ -79,6 +85,9 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
 
     public function testShouldWriteNestedHeaders()
     {
+        $columnDimensionMock = $this->getMockBuilder('\PHPExcel_Worksheet_ColumnDimension')->disableOriginalConstructor()->getMock();
+        $columnDimensionMock->expects($this->exactly(6))->method('setAutoSize')->with(true);
+
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
         $worksheetMock->expects($this->exactly(7))->method('setCellValue')->withConsecutive(
             ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta'], ['E1', 'Echo'],
@@ -87,6 +96,9 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $worksheetMock->expects($this->exactly(5))->method('mergeCells')->withConsecutive(
             ['A1:A2'], ['B1:B2'], ['C1:C2'], ['D1:D2'], ['E1:F1']
         );
+        $worksheetMock->expects($this->exactly(6))->method('getColumnDimension')->withConsecutive(
+            ['A'], ['B'], ['C'], ['D'], ['E'], ['F']
+        )->willReturn($columnDimensionMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
 
         $headers = [0 => 'Alpha', 1 => 'Bravo', 2 => 'Gamma', 3 => 'Delta', 4 => ['Echo' => ['Foxtrot', 'Hotel']]];

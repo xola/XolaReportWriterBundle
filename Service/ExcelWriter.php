@@ -17,6 +17,7 @@ class ExcelWriter extends AbstractWriter
         parent::__construct($logger);
         $this->phpexcel = $phpExcel;
         $this->handle = $this->phpexcel->createPHPExcelObject();
+        \PHPExcel_Shared_Font::setAutoSizeMethod(\PHPExcel_Shared_Font::AUTOSIZE_METHOD_EXACT);
     }
 
     /**
@@ -77,6 +78,7 @@ class ExcelWriter extends AbstractWriter
                 $worksheet->setCellValue($cell, $header);
                 // Assumption that all headers are multi-row, so we merge the rows of non-multirow headers
                 $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow+1));
+                $worksheet->getColumnDimension($column)->setAutoSize(true);
                 $column++;
             } else {
                 // This is a multi-row header, the first row consists of one value merged across several cells and the
@@ -95,10 +97,13 @@ class ExcelWriter extends AbstractWriter
                 // Now write the children's values onto the second row
                 foreach ($header[$headerName] as $subHeaderName) {
                     $worksheet->setCellValue($column . ($initRow + 1), $subHeaderName);
+                    $worksheet->getColumnDimension($column)->setAutoSize(true);
                     $column++;
                 }
             }
         }
+
+        $worksheet->calculateColumnWidths(true);
 
         $this->currentRow += 2;
     }
