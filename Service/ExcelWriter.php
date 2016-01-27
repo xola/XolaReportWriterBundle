@@ -73,13 +73,20 @@ class ExcelWriter extends AbstractWriter
      * Write the headers (nested or otherwise) to the current active worksheet
      *
      * @param $headers
+     * @param $initRow
+     * 
      * @throws \PHPExcel_Exception
      */
     public function writeHeaders($headers, $initRow = null)
     {
         $worksheet = $this->handle->getActiveSheet();
 
-        $initRow = ($initRow) ? $initRow : $this->currentRow;
+        if ($initRow) {
+            $worksheet->insertNewRowBefore($initRow, 2);
+        } else {
+            $initRow = $this->currentRow;
+        }
+
         $column = 'A';
         foreach ($headers as $idx => $header) {
             $cell = $column . $initRow;
