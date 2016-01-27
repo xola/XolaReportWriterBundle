@@ -31,8 +31,8 @@ class CSVWriterTest extends PHPUnit_Framework_TestCase
 
     public function testShouldWriteRowToFile()
     {
-        $this->writer->writeRawRow(['a', 'b', 'c,', 'd']);
-        $this->writer->writeRawRow(['e', 'f', 'g', 'h']);
+        $this->writer->writeRow(['a', 'b', 'c,', 'd']);
+        $this->writer->writeRow(['e', 'f', 'g', 'h']);
 
         $contents = $this->getFileContents();
         $expected = "a,b,\"c,\",d\ne,f,g,h\n";

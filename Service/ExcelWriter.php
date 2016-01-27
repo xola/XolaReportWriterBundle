@@ -169,15 +169,13 @@ class ExcelWriter extends AbstractWriter
             }
         }
 
-        $this->writeRawRow($excelRow);
+        $this->writeArrays($excelRow);
     }
 
     /**
      * Write one or more rows starting at the given row and column
      *
      * @param array  $lines
-     * @param int    $row
-     * @param string $column
      */
     private function writeArrays(array $lines)
     {

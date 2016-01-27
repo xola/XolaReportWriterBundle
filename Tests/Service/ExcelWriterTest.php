@@ -151,24 +151,14 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $this->buildService()->writeRow($input, $headers);
     }
 
-    public function testShouldWriteRawDataStartingFromTheFirstCell()
+    public function testShouldWriteArrayAsDataStartingFromTheFirstCell()
     {
         $lines = ['Lorem', 'Ipsum', 'Dolor', 'Sit', 'Amet'];
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
-        $worksheetMock->expects($this->once())->method('fromArray')->with($lines, null, 'A1');
+        $worksheetMock->expects($this->once())->method('fromArray')->with([$lines], null, 'A1');
         $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
 
-        $this->buildService()->writeRawRows($lines);
-    }
-
-    public function testShouldWriteRawDataStartingFromTheGivenCell()
-    {
-        $lines = ['Lorem', 'Ipsum', 'Dolor', 'Sit', 'Amet'];
-        $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
-        $worksheetMock->expects($this->once())->method('fromArray')->with($lines, null, 'C3');
-        $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
-
-        $this->buildService()->writeRawRows($lines, 'C', 3);
+        $this->buildService()->writeRow($lines);
     }
 
     public function testShouldFreezePanes()
