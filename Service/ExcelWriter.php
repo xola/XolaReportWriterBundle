@@ -23,13 +23,22 @@ class ExcelWriter extends AbstractWriter
     /**
      * Initialize the excel writer
      *
+     * @param string $filepath
+     */
+    public function setup($filepath)
+    {
+        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+        $this->filepath = $filepath;
+    }
+
+    /**
+     * Set meta properties for the excel writer
+     *
      * @param string $author The author/creator of this file
      * @param string $title  The title of this file
      */
-    public function setup($author = '', $title = '')
+    public function setProperties($author = '', $title = '')
     {
-        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
-
         $this->handle->getProperties()
             ->setCreator($author)
             ->setTitle($title);
@@ -227,17 +236,16 @@ class ExcelWriter extends AbstractWriter
     /**
      * Save the current data into an .xlsx file
      *
-     * @param $filename
      * @throws \PHPExcel_Exception
      */
-    public function finalize($filename)
+    public function finalize()
     {
         // Set active sheet index to the first sheet, so Excel opens this as the first sheet
         $this->handle->setActiveSheetIndex(0);
 
         // Write the file to disk
         $writer = $this->phpexcel->createWriter($this->handle, 'Excel2007');
-        $writer->save($filename);
+        $writer->save($this->filepath);
     }
 
     public function resetCurrentRow($pos)

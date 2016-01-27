@@ -27,21 +27,28 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
 
     public function testShouldInitializePHPExcelObject()
     {
+        // Setup all the mocks
+        $pageSetupMock = $this->getMockBuilder('\PHPExcel_Worksheet_PageSetup')->disableOriginalConstructor()->getMock();
+        $pageSetupMock->expects($this->once())->method('setOrientation')->with('landscape');
+        $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock->expects($this->once())->method('getPageSetup')->willReturn($pageSetupMock);
+        $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
+
+        $this->buildService()->setup("filename.xlsx");
+    }
+
+    public function testShouldSetPropertiesForExcelFile()
+    {
         $author = 'foo';
         $title = 'bar';
 
         // Setup all the mocks
-        $pageSetupMock = $this->getMockBuilder('\PHPExcel_Worksheet_PageSetup')->disableOriginalConstructor()->getMock();
-        $pageSetupMock->expects($this->once())->method('setOrientation')->with('landscape');
         $propertiesMock = $this->getMockBuilder('\PHPExcel_DocumentProperties')->disableOriginalConstructor()->getMock();
         $propertiesMock->expects($this->once())->method('setCreator')->with($author)->willReturn($propertiesMock);
         $propertiesMock->expects($this->once())->method('setTitle')->with($title)->willReturn($propertiesMock);
-        $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
-        $worksheetMock->expects($this->once())->method('getPageSetup')->willReturn($pageSetupMock);
-        $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getProperties')->willReturn($propertiesMock);
 
-        $this->buildService()->setup($author, $title);
+        $this->buildService()->setProperties($author, $title);
     }
 
     public function testShouldSetCurrentWorksheet()
@@ -200,14 +207,21 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $writerMock = $this->getMockBuilder('\PHPExcel_Writer_IWriter')->disableOriginalConstructor()->getMock();
         $writerMock->expects($this->once())->method('save')->with($filename);
 
+        // Setup all the mocks
+        $pageSetupMock = $this->getMockBuilder('\PHPExcel_Worksheet_PageSetup')->disableOriginalConstructor()->getMock();
+        $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock->expects($this->once())->method('getPageSetup')->willReturn($pageSetupMock);
+        $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
+
         $phpExcel = $this->getPHPExcelMock();
         $phpExcel->expects($this->once())->method('createWriter')
             ->with($this->phpExcelHandleMock, 'Excel2007')
             ->willReturn($writerMock);
 
         $service = $this->buildService(['phpExcel' => $phpExcel]);
+        $service->setup($filename);
 
-        $service->finalize($filename);
+        $service->finalize();
     }
 
     private function getPHPExcelMock()

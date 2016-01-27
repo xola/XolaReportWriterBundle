@@ -11,19 +11,9 @@ class CSVWriter extends AbstractWriter
      */
     private $handle;
 
-    /**
-     * Set the handle that will be used to write this csv
-     *
-     * @param resource $handle A file system pointer resource that is typically created using fopen().
-     */
-    public function setHandle($handle)
+    public function setup($filepath)
     {
-        $this->handle = $handle;
-    }
-
-    public function getHandle()
-    {
-        return $this->handle;
+        $this->handle = fopen($filepath, 'w+');
     }
 
     /**
@@ -36,7 +26,7 @@ class CSVWriter extends AbstractWriter
     public function prepare($cacheFile, $sortedHeaders)
     {
         $csvFile = $cacheFile . '.csv';
-        $this->setHandle(fopen($csvFile, 'w+'));
+        $this->setup($csvFile);
 
         // Generate a csv version of the multi-row headers to write to disk
         $headerRows = [[], []];
@@ -61,8 +51,8 @@ class CSVWriter extends AbstractWriter
             }
         }
 
-        $this->writeRawRow($headerRows[0]);
-        $this->writeRawRow($headerRows[1]);
+        $this->writeRow($headerRows[0]);
+        $this->writeRow($headerRows[1]);
 
         // TODO: Track memory usage
         $file = new \SplFileObject($cacheFile);
@@ -87,7 +77,7 @@ class CSVWriter extends AbstractWriter
                 }
             }
 
-            $this->writeRawRow($csvRow);
+            $this->writeRow($csvRow);
             $file->next();
         }
 
@@ -118,4 +108,8 @@ class CSVWriter extends AbstractWriter
         fputcsv($this->handle, $row);
     }
 
+    public function finalize()
+    {
+        fclose($this->handle);
+    }
 }
