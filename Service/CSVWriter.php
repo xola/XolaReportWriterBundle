@@ -5,6 +5,28 @@ namespace Xola\ReportWriterBundle\Service;
 class CSVWriter extends AbstractWriter
 {
     /**
+     * A file system pointer resource that is typically created using fopen()
+     *
+     * @var resource
+     */
+    private $handle;
+
+    /**
+     * Set the handle that will be used to write this csv
+     *
+     * @param resource $handle A file system pointer resource that is typically created using fopen().
+     */
+    public function setHandle($handle)
+    {
+        $this->handle = $handle;
+    }
+
+    public function getHandle()
+    {
+        return $this->handle;
+    }
+
+    /**
      * Write the compiled csv to disk and return the file name
      *
      * @param array $sortedHeaders An array of sorted headers
@@ -14,7 +36,7 @@ class CSVWriter extends AbstractWriter
     public function prepare($cacheFile, $sortedHeaders)
     {
         $csvFile = $cacheFile . '.csv';
-        $handle = fopen($csvFile, 'w');
+        $this->setHandle(fopen($csvFile, 'w+'));
 
         // Generate a csv version of the multi-row headers to write to disk
         $headerRows = [[], []];
@@ -39,8 +61,8 @@ class CSVWriter extends AbstractWriter
             }
         }
 
-        fputcsv($handle, $headerRows[0]);
-        fputcsv($handle, $headerRows[1]);
+        $this->writeRawRow($headerRows[0]);
+        $this->writeRawRow($headerRows[1]);
 
         // TODO: Track memory usage
         $file = new \SplFileObject($cacheFile);
@@ -65,15 +87,35 @@ class CSVWriter extends AbstractWriter
                 }
             }
 
-            fputcsv($handle, $csvRow);
+            $this->writeRawRow($csvRow);
             $file->next();
         }
 
         $file = null; // Get rid of the file handle that SplFileObject has on cache file
         unlink($cacheFile);
 
-        fclose($handle);
+        fclose($this->handle);
 
         return $csvFile;
     }
+
+    public function writeHeaders($headers, $initRow = null)
+    {
+        $contents = stream_get_contents($this->handle, -1, 0);
+        rewind($this->handle);
+        $this->writeRow($headers);
+        fwrite($this->handle, $contents);
+    }
+
+    /**
+     * Write a row to the csv
+     *
+     * @param array $row
+     * @param array $headers
+     */
+    public function writeRow($row, $headers = [])
+    {
+        fputcsv($this->handle, $row);
+    }
+
 }

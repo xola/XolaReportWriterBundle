@@ -83,4 +83,8 @@ abstract class AbstractWriter
     }
 
     abstract public function prepare($cacheFile, $sortedHeaders);
+
+    abstract public function writeHeaders($headers, $initRow = null);
+
+    abstract public function writeRow($row, $headers = []);
 }

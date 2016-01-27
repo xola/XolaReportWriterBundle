@@ -63,16 +63,16 @@ class ExcelWriter extends AbstractWriter
     /**
      * Write the headers (nested or otherwise) to the current active worksheet
      *
-     * @param $sortedHeaders
+     * @param $headers
      * @throws \PHPExcel_Exception
      */
-    public function writeHeaders($sortedHeaders)
+    public function writeHeaders($headers, $initRow = null)
     {
         $worksheet = $this->handle->getActiveSheet();
 
-        $initRow = $this->currentRow;
+        $initRow = ($initRow) ? $initRow : $this->currentRow;
         $column = 'A';
-        foreach ($sortedHeaders as $idx => $header) {
+        foreach ($headers as $idx => $header) {
             $cell = $column . $initRow;
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
@@ -140,8 +140,14 @@ class ExcelWriter extends AbstractWriter
         }
     }
 
-    public function writeRow($dataRow, $headers)
+    public function writeRow($dataRow, $headers = [])
     {
+        if (empty($headers)) {
+            // No headers to manage. Just write this array of data directly
+            $this->writeArray($dataRow);
+            return;
+        }
+
         if (!is_array($dataRow)) {
             // Invalid data -- don't process this row
             return;
@@ -163,24 +169,33 @@ class ExcelWriter extends AbstractWriter
             }
         }
 
-        $this->handle->getActiveSheet()->fromArray($excelRow, null, 'A' . $rowIdx);
-        $this->currentRow++;
+        $this->writeRawRow($excelRow);
     }
 
     /**
-     * Write ad-hoc set of rows without any dependence on headers
+     * Write one or more rows starting at the given row and column
      *
      * @param array  $lines
      * @param int    $row
      * @param string $column
      */
-    public function writeRawRows(array $lines, $column = 'A', $row = null)
+    private function writeArrays(array $lines)
     {
-        if (is_null($row)) {
-            $row = $this->currentRow;
-        }
-        $this->handle->getActiveSheet()->fromArray($lines, null, $column . $row);
+        $startCell = 'A' . $this->currentRow;
+        $this->handle->getActiveSheet()->fromArray($lines, null, $startCell);
         $this->currentRow += count($lines);
+    }
+
+    /**
+     * Write a single row of data
+     *
+     * @param array $row A single row of data
+     */
+    private function writeArray(array $row)
+    {
+        $startCell = 'A' . $this->currentRow;
+        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell);
+        $this->currentRow++;
     }
 
     /**
