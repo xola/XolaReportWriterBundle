@@ -7,16 +7,19 @@ class CSVWriterTest extends PHPUnit_Framework_TestCase
     /** @var CSVWriter */
     private $writer;
     private $handle;
+    private $testfilename;
 
     public function setUp()
     {
         $this->writer = $this->buildService();
-        $this->writer->setup("foo.csv");
+        $this->testfilename = uniqid() . ".csv";
+        $this->writer->setup($this->testfilename);
     }
 
     public function tearDown()
     {
         $this->writer->finalize();
+        unlink($this->testfilename);
     }
 
     public function buildService($params = [])
@@ -32,7 +35,7 @@ class CSVWriterTest extends PHPUnit_Framework_TestCase
         $this->writer->writeRow(['a', 'b', 'c,', 'd']);
         $this->writer->writeRow(['e', 'f', 'g', 'h']);
 
-        $contents = file_get_contents("foo.csv");
+        $contents = file_get_contents($this->testfilename);
         $expected = "a,b,\"c,\",d\ne,f,g,h\n";
         $this->assertEquals($expected, $contents);
     }
