@@ -23,13 +23,22 @@ class ExcelWriter extends AbstractWriter
     /**
      * Initialize the excel writer
      *
+     * @param string $filepath
+     */
+    public function setup($filepath)
+    {
+        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+        $this->filepath = $filepath;
+    }
+
+    /**
+     * Set meta properties for the excel writer
+     *
      * @param string $author The author/creator of this file
      * @param string $title  The title of this file
      */
-    public function setup($author = '', $title = '')
+    public function setProperties($author = '', $title = '')
     {
-        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
-
         $this->handle->getProperties()
             ->setCreator($author)
             ->setTitle($title);
@@ -63,16 +72,23 @@ class ExcelWriter extends AbstractWriter
     /**
      * Write the headers (nested or otherwise) to the current active worksheet
      *
-     * @param $sortedHeaders
+     * @param $headers
+     * @param $initRow
+     * 
      * @throws \PHPExcel_Exception
      */
-    public function writeHeaders($sortedHeaders)
+    public function writeHeaders($headers, $initRow = null)
     {
         $worksheet = $this->handle->getActiveSheet();
 
-        $initRow = $this->currentRow;
+        if ($initRow) {
+            $worksheet->insertNewRowBefore($initRow, 2);
+        } else {
+            $initRow = $this->currentRow;
+        }
+
         $column = 'A';
-        foreach ($sortedHeaders as $idx => $header) {
+        foreach ($headers as $idx => $header) {
             $cell = $column . $initRow;
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
@@ -140,8 +156,14 @@ class ExcelWriter extends AbstractWriter
         }
     }
 
-    public function writeRow($dataRow, $headers)
+    public function writeRow($dataRow, $headers = [])
     {
+        if (empty($headers)) {
+            // No headers to manage. Just write this array of data directly
+            $this->writeArray($dataRow);
+            return;
+        }
+
         if (!is_array($dataRow)) {
             // Invalid data -- don't process this row
             return;
@@ -163,24 +185,31 @@ class ExcelWriter extends AbstractWriter
             }
         }
 
-        $this->handle->getActiveSheet()->fromArray($excelRow, null, 'A' . $rowIdx);
-        $this->currentRow++;
+        $this->writeArrays($excelRow);
     }
 
     /**
-     * Write ad-hoc set of rows without any dependence on headers
+     * Write one or more rows starting at the given row and column
      *
      * @param array  $lines
-     * @param int    $row
-     * @param string $column
      */
-    public function writeRawRows(array $lines, $column = 'A', $row = null)
+    private function writeArrays(array $lines)
     {
-        if (is_null($row)) {
-            $row = $this->currentRow;
-        }
-        $this->handle->getActiveSheet()->fromArray($lines, null, $column . $row);
+        $startCell = 'A' . $this->currentRow;
+        $this->handle->getActiveSheet()->fromArray($lines, null, $startCell);
         $this->currentRow += count($lines);
+    }
+
+    /**
+     * Write a single row of data
+     *
+     * @param array $row A single row of data
+     */
+    private function writeArray(array $row)
+    {
+        $startCell = 'A' . $this->currentRow;
+        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell);
+        $this->currentRow++;
     }
 
     /**
@@ -214,17 +243,16 @@ class ExcelWriter extends AbstractWriter
     /**
      * Save the current data into an .xlsx file
      *
-     * @param $filename
      * @throws \PHPExcel_Exception
      */
-    public function finalize($filename)
+    public function finalize()
     {
         // Set active sheet index to the first sheet, so Excel opens this as the first sheet
         $this->handle->setActiveSheetIndex(0);
 
         // Write the file to disk
         $writer = $this->phpexcel->createWriter($this->handle, 'Excel2007');
-        $writer->save($filename);
+        $writer->save($this->filepath);
     }
 
     public function resetCurrentRow($pos)

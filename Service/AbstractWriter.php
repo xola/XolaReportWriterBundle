@@ -9,10 +9,24 @@ abstract class AbstractWriter
 {
     protected $logger;
 
+    /**
+     * Absolute path to the file that will be written by the writer
+     *
+     * @var string
+     */
+    protected $filepath;
+
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
+
+    /**
+     * Initialize the writer
+     *
+     * @param string $filepath Path to the file that needs to be created by the writer
+     */
+    abstract public function setup($filepath);
 
     /**
      * Write the formatted order data to disk, so we can fetch it later
@@ -83,4 +97,10 @@ abstract class AbstractWriter
     }
 
     abstract public function prepare($cacheFile, $sortedHeaders);
+
+    abstract public function writeHeaders($headers, $initRow = null);
+
+    abstract public function writeRow($row, $headers = []);
+
+    abstract public function finalize();
 }
