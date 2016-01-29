@@ -74,12 +74,13 @@ class ExcelWriter extends AbstractWriter
      *
      * @param $headers
      * @param $initRow
-     * 
+     *
      * @throws \PHPExcel_Exception
      */
     public function writeHeaders($headers, $initRow = null)
     {
         $worksheet = $this->handle->getActiveSheet();
+        $hasMultiRowHeaders = $this->hasMultiRowHeaders($headers);
 
         if ($initRow) {
             $worksheet->insertNewRowBefore($initRow, 2);
@@ -92,9 +93,12 @@ class ExcelWriter extends AbstractWriter
             $cell = $column . $initRow;
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
-                // Assumption that all headers are multi-row, so we merge the rows of non-multirow headers
-                $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow+1));
                 $worksheet->getColumnDimension($column)->setAutoSize(true);
+                if ($hasMultiRowHeaders) {
+                    // These set of headers contain multi-row headers. So this cell needs to be merged with cell in the
+                    // row below it.
+                    $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow + 1));
+                }
                 $column++;
             } else {
                 // This is a multi-row header, the first row consists of one value merged across several cells and the
@@ -117,11 +121,33 @@ class ExcelWriter extends AbstractWriter
                     $column++;
                 }
             }
+
+            // Mark headers as bold
+            $worksheet->getStyle($cell)->getFont()->setBold(true);
         }
 
         $worksheet->calculateColumnWidths(true);
 
         $this->currentRow += 2;
+    }
+
+    /**
+     * Check if the given array have multi-row headers
+     *
+     * @param $headers
+     *
+     * @return bool True if it has multi-row headers
+     */
+    private function hasMultiRowHeaders($headers)
+    {
+        foreach ($headers as $idx => $header) {
+            if (is_array($header)) {
+                // Multi-row header
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
