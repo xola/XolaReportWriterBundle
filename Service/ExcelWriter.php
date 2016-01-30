@@ -128,7 +128,7 @@ class ExcelWriter extends AbstractWriter
 
         $worksheet->calculateColumnWidths(true);
 
-        $this->currentRow += 2;
+        $this->currentRow += ($hasMultiRowHeaders) ? 2 : 1;
     }
 
     /**
