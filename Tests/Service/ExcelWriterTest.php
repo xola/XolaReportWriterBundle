@@ -74,12 +74,14 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $columnDimensionMock = $this->getMockBuilder('\PHPExcel_Worksheet_ColumnDimension')->disableOriginalConstructor()->getMock();
         $columnDimensionMock->expects($this->exactly(4))->method('setAutoSize')->with(true);
 
+        $phpExcelStyleMock2 = $this->getMockBuilder('\PHPExcel_Style_Font')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock2->expects($this->exactly(4))->method('setBold')->with(true);
+        $phpExcelStyleMock = $this->getMockBuilder('\PHPExcel_Style')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock->expects($this->exactly(4))->method('getFont')->willReturn($phpExcelStyleMock2);
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock->expects($this->exactly(4))->method('getStyle')->willReturn($phpExcelStyleMock);
         $worksheetMock->expects($this->exactly(4))->method('setCellValue')->withConsecutive(
             ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta']
-        );
-        $worksheetMock->expects($this->exactly(4))->method('mergeCells')->withConsecutive(
-            ['A1:A2'], ['B1:B2'], ['C1:C2'], ['D1:D2']
         );
         $worksheetMock->expects($this->exactly(4))->method('getColumnDimension')->withConsecutive(
             ['A'], ['B'], ['C'], ['D']
@@ -95,7 +97,13 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $columnDimensionMock = $this->getMockBuilder('\PHPExcel_Worksheet_ColumnDimension')->disableOriginalConstructor()->getMock();
         $columnDimensionMock->expects($this->exactly(6))->method('setAutoSize')->with(true);
 
+        $phpExcelStyleMock2 = $this->getMockBuilder('\PHPExcel_Style_Font')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock2->expects($this->exactly(5))->method('setBold')->with(true);
+        $phpExcelStyleMock = $this->getMockBuilder('\PHPExcel_Style')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock->expects($this->exactly(5))->method('getFont')->willReturn($phpExcelStyleMock2);
+
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock->expects($this->exactly(5))->method('getStyle')->willReturn($phpExcelStyleMock);
         $worksheetMock->expects($this->exactly(7))->method('setCellValue')->withConsecutive(
             ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta'], ['E1', 'Echo'],
             ['E2', 'Foxtrot'], ['F2', 'Hotel']
