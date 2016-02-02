@@ -83,7 +83,7 @@ class ExcelWriter extends AbstractWriter
         $hasMultiRowHeaders = $this->hasMultiRowHeaders($headers);
 
         if ($initRow) {
-            $worksheet->insertNewRowBefore($initRow, 2);
+            $worksheet->insertNewRowBefore($initRow, 1);
         } else {
             $initRow = $this->currentRow;
         }
@@ -128,7 +128,7 @@ class ExcelWriter extends AbstractWriter
 
         $worksheet->calculateColumnWidths(true);
 
-        $this->currentRow += ($hasMultiRowHeaders) ? 2 : 1;
+        $this->currentRow = $initRow + (($hasMultiRowHeaders) ? 2 : 1);
     }
 
     /**
@@ -222,7 +222,7 @@ class ExcelWriter extends AbstractWriter
     private function writeArrays(array $lines)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->handle->getActiveSheet()->fromArray($lines, null, $startCell);
+        $this->handle->getActiveSheet()->fromArray($lines, null, $startCell, true);
         $this->currentRow += count($lines);
     }
 
@@ -234,7 +234,7 @@ class ExcelWriter extends AbstractWriter
     private function writeArray(array $row)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell);
+        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell, true);
         $this->currentRow++;
     }
 
