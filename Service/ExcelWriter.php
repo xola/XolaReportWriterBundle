@@ -16,7 +16,6 @@ class ExcelWriter extends AbstractWriter
     {
         parent::__construct($logger);
         $this->phpexcel = $phpExcel;
-        $this->handle = $this->phpexcel->createPHPExcelObject();
         \PHPExcel_Shared_Font::setAutoSizeMethod(\PHPExcel_Shared_Font::AUTOSIZE_METHOD_EXACT);
     }
 
@@ -27,6 +26,7 @@ class ExcelWriter extends AbstractWriter
      */
     public function setup($filepath)
     {
+        $this->handle = $this->phpexcel->createPHPExcelObject();
         $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
         $this->filepath = $filepath;
     }
