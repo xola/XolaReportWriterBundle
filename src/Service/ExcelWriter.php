@@ -21,7 +21,7 @@ class ExcelWriter extends AbstractWriter
         parent::__construct($logger);
         $this->phpexcel = $phpExcel;
         $this->spreadsheet = $phpExcel->createPhpSpreadsheetObject();
-        Font::setAutoSizeMethod(Font::AUTOSIZE_METHOD_EXACT);
+        Font::setAutoSizeMethod(Font::AUTOSIZE_METHOD_APPROX);
     }
 
     /**
