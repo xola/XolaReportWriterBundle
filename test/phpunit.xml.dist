@@ -11,8 +11,8 @@
          bootstrap="bootstrap.php">
 
     <testsuites>
-        <testsuite name="XolaReportWriterBundle Test Suite">
-            <directory>./test</directory>
+        <testsuite name="all">
+            <directory>.</directory>
         </testsuite>
     </testsuites>
 
