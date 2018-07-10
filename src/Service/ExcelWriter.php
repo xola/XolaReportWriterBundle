@@ -2,32 +2,38 @@
 
 namespace Xola\ReportWriterBundle\Service;
 
+use PhpOffice\PhpSpreadsheet\Shared\Font;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Psr\Log\LoggerInterface;
-use Xola\ReportWriterBundle\PHPExcelFactory;
+use Xola\ReportWriterBundle\SpreadsheetFactory;
 
 class ExcelWriter extends AbstractWriter
 {
+    /** @var SpreadsheetFactory */
     private $phpexcel;
-    /* @var \PHPExcel $handle */
-    private $handle;
+    /* @var Spreadsheet $spreadsheet */
+    private $spreadsheet;
     private $currentRow = 1;
 
-    public function __construct(LoggerInterface $logger, PHPExcelFactory $phpExcel)
+    public function __construct(LoggerInterface $logger, SpreadsheetFactory $phpExcel)
     {
         parent::__construct($logger);
         $this->phpexcel = $phpExcel;
-        \PHPExcel_Shared_Font::setAutoSizeMethod(\PHPExcel_Shared_Font::AUTOSIZE_METHOD_EXACT);
+        $this->spreadsheet = $phpExcel->createPhpSpreadsheetObject();
+        Font::setAutoSizeMethod(Font::AUTOSIZE_METHOD_EXACT);
     }
 
     /**
      * Initialize the excel writer
      *
      * @param string $filepath
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setup($filepath)
     {
-        $this->handle = $this->phpexcel->createPHPExcelObject();
-        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+        $this->spreadsheet = $this->phpexcel->createPhpSpreadsheetObject();
+        $this->spreadsheet->getActiveSheet()->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
         $this->filepath = $filepath;
     }
 
@@ -39,7 +45,7 @@ class ExcelWriter extends AbstractWriter
      */
     public function setProperties($author = '', $title = '')
     {
-        $this->handle->getProperties()
+        $this->spreadsheet->getProperties()
             ->setCreator($author)
             ->setTitle($title);
     }
@@ -49,13 +55,13 @@ class ExcelWriter extends AbstractWriter
      *
      * @param int    $index Location at which to create the sheet (NULL for last)
      * @param string $title The title of the sheet
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setWorksheet($index, $title)
     {
-        $this->handle->createSheet($index);
+        $this->spreadsheet->createSheet($index);
         $this->resetCurrentRow(1);
-        $this->handle->setActiveSheetIndex($index);
+        $this->spreadsheet->setActiveSheetIndex($index);
         $this->setSheetTitle($title);
     }
 
@@ -63,10 +69,11 @@ class ExcelWriter extends AbstractWriter
      * Set the title for the current active worksheet
      *
      * @param string $title
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setSheetTitle($title)
     {
-        $this->handle->getActiveSheet()->setTitle($title);
+        $this->spreadsheet->getActiveSheet()->setTitle($title);
     }
 
     /**
@@ -75,11 +82,11 @@ class ExcelWriter extends AbstractWriter
      * @param $headers
      * @param $initRow
      *
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeHeaders($headers, $initRow = null)
     {
-        $worksheet = $this->handle->getActiveSheet();
+        $worksheet = $this->spreadsheet->getActiveSheet();
         $hasMultiRowHeaders = $this->hasMultiRowHeaders($headers);
 
         if ($initRow) {
@@ -126,7 +133,7 @@ class ExcelWriter extends AbstractWriter
             $worksheet->getStyle($cell)->getFont()->setBold(true);
         }
 
-        $worksheet->calculateColumnWidths(true);
+        $worksheet->calculateColumnWidths();
 
         $this->currentRow = $initRow + (($hasMultiRowHeaders) ? 2 : 1);
     }
@@ -153,9 +160,10 @@ class ExcelWriter extends AbstractWriter
     /**
      * Utility method that will data from the cached file per row and write it
      *
-     * @param string $cacheFile     Filename where the fetched data can be cached from
-     * @param array  $sortedHeaders Headers to write sorted in the order you want them
-     * @param bool   $freezeHeaders True if you want to freeze headers (default: false)
+     * @param string $cacheFile Filename where the fetched data can be cached from
+     * @param array $sortedHeaders Headers to write sorted in the order you want them
+     * @param bool $freezeHeaders True if you want to freeze headers (default: false)
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function prepare($cacheFile, $sortedHeaders, $freezeHeaders = false)
     {
@@ -217,12 +225,13 @@ class ExcelWriter extends AbstractWriter
     /**
      * Write one or more rows starting at the given row and column
      *
-     * @param array  $lines
+     * @param array $lines
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     private function writeArrays(array $lines)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->handle->getActiveSheet()->fromArray($lines, null, $startCell, true);
+        $this->spreadsheet->getActiveSheet()->fromArray($lines, null, $startCell, true);
         $this->currentRow += count($lines);
     }
 
@@ -230,11 +239,12 @@ class ExcelWriter extends AbstractWriter
      * Write a single row of data
      *
      * @param array $row A single row of data
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     private function writeArray(array $row)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell, true);
+        $this->spreadsheet->getActiveSheet()->fromArray([$row], null, $startCell, true);
         $this->currentRow++;
     }
 
@@ -242,42 +252,42 @@ class ExcelWriter extends AbstractWriter
      * Freeze panes at the given location so they stay fixed upon scroll
      *
      * @param string $cell
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function freezePanes($cell = '')
     {
         if (empty($cell)) {
             $cell = 'A3';
         }
-        $this->handle->getActiveSheet()->freezePane($cell);
+        $this->spreadsheet->getActiveSheet()->freezePane($cell);
     }
 
     /**
      * Add a horizonal (row) page break for print layout
      *
      * @param string $cell
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function addHorizontalPageBreak($cell = '')
     {
         if (empty($cell)) {
             $cell = 'A' . ($this->currentRow - 2);
         }
-        $this->handle->getActiveSheet()->setBreak($cell, \PHPExcel_Worksheet::BREAK_ROW);
+        $this->spreadsheet->getActiveSheet()->setBreak($cell, \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW);
     }
 
     /**
      * Save the current data into an .xlsx file
      *
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function finalize()
     {
         // Set active sheet index to the first sheet, so Excel opens this as the first sheet
-        $this->handle->setActiveSheetIndex(0);
+        $this->spreadsheet->setActiveSheetIndex(0);
 
         // Write the file to disk
-        $writer = $this->phpexcel->createWriter($this->handle, 'Excel2007');
+        $writer = $this->phpexcel->createWriter($this->spreadsheet, 'Xlsx');
         $writer->save($this->filepath);
     }
 

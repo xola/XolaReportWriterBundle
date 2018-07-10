@@ -1,7 +1,7 @@
 parameters:
     csvwriter.service.class: Xola\ReportWriterBundle\Service\CSVWriter
     excelwriter.service.class: Xola\ReportWriterBundle\Service\ExcelWriter
-    phpexcel.class:  Xola\ReportWriterBundle\PHPExcelFactory
+    phpexcel.class:  Xola\ReportWriterBundle\SpreadsheetFactory
 
 services:
     csvwriter:

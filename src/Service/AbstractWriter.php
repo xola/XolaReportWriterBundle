@@ -2,7 +2,6 @@
 
 namespace Xola\ReportWriterBundle\Service;
 
-use Symfony\Component\DependencyInjection\Container;
 use Psr\Log\LoggerInterface;
 
 abstract class AbstractWriter
