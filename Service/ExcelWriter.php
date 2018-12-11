@@ -234,7 +234,18 @@ class ExcelWriter extends AbstractWriter
     private function writeArray(array $row)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->handle->getActiveSheet()->fromArray([$row], null, $startCell, true);
+        $sheet = $this->handle->getActiveSheet();
+        $sheet->fromArray([$row], null, $startCell, true);
+
+        $column = 'A';
+        for ($i = 0; $i < count($row); $i++) {
+            if (preg_match("/DATEVALUE/", $row[$i]) && preg_match("/TIMEVALUE/", $row[$i])) {
+                // This is a special date time column, set it as that
+                $sheet->getStyle($column . $this->currentRow)->getNumberFormat()->setFormatCode("yyyy-m-d hh:mm:ss");
+            }
+            $column++;
+        }
+
         $this->currentRow++;
     }
 
