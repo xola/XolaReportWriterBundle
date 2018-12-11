@@ -239,9 +239,18 @@ class ExcelWriter extends AbstractWriter
 
         $column = 'A';
         for ($i = 0; $i < count($row); $i++) {
-            if (preg_match("/DATEVALUE/", $row[$i]) && preg_match("/TIMEVALUE/", $row[$i])) {
-                // This is a special date time column, set it as that
-                $sheet->getStyle($column . $this->currentRow)->getNumberFormat()->setFormatCode("yyyy-m-d hh:mm:ss");
+            if (preg_match("/^=/", $row[$i])) {
+                // This is a formula, check it for date & time formulae
+                $formats = [];
+                if (preg_match("/DATEVALUE/", $row[$i])) {
+                    $formats[] = "yyyy-m-d";
+                }
+                if (preg_match("/TIMEVALUE/", $row[$i])) {
+                    $formats[] = "hh:mm:ss";
+                }
+                if (!empty($formats)) {
+                    $sheet->getStyle($column . $this->currentRow)->getNumberFormat()->setFormatCode(implode(" ", $formats));
+                }
             }
             $column++;
         }
