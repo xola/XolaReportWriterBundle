@@ -242,10 +242,10 @@ class ExcelWriter extends AbstractWriter
             if (preg_match("/^=/", $row[$i])) {
                 // This is a formula, check it for date & time formulae
                 $formats = [];
-                if (preg_match("/DATEVALUE/", $row[$i])) {
+                if (strpos($row[$i], "DATEVALUE") !== FALSE) {
                     $formats[] = "yyyy-m-d";
                 }
-                if (preg_match("/TIMEVALUE/", $row[$i])) {
+                if (strpos($row[$i], "TIMEVALUE") !== FALSE) {
                     $formats[] = "hh:mm:ss";
                 }
                 if (!empty($formats)) {
