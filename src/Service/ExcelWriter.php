@@ -244,7 +244,26 @@ class ExcelWriter extends AbstractWriter
     private function writeArray(array $row)
     {
         $startCell = 'A' . $this->currentRow;
-        $this->spreadsheet->getActiveSheet()->fromArray([$row], null, $startCell, true);
+        $sheet = $this->spreadsheet->getActiveSheet();
+        $sheet->fromArray([$row], null, $startCell, true);
+
+        $column = 'A';
+        for ($i = 0; $i < count($row); $i++) {
+            if (preg_match("/^=/", $row[$i])) {
+                // This is a formula, check it for date & time formulae
+                $formats = [];
+                if (strpos($row[$i], "DATEVALUE") !== FALSE) {
+                    $formats[] = "yyyy-m-d";
+                }
+                if (strpos($row[$i], "TIMEVALUE") !== FALSE) {
+                    $formats[] = "hh:mm:ss";
+                }
+                if (!empty($formats)) {
+                    $sheet->getStyle($column . $this->currentRow)->getNumberFormat()->setFormatCode(implode(" ", $formats));
+                }
+            }
+            $column++;
+        }
         $this->currentRow++;
     }
 
