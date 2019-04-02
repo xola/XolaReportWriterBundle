@@ -2,32 +2,35 @@
 
 namespace Xola\ReportWriterBundle\Service;
 
+use PhpOffice\PhpSpreadsheet\Shared\Font;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Psr\Log\LoggerInterface;
-use Xola\ReportWriterBundle\PHPExcelFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ExcelWriter extends AbstractWriter
 {
-    private $phpexcel;
-    /* @var \PHPExcel $handle */
+    /* @var Spreadsheet $handle */
     private $handle;
     private $currentRow = 1;
 
-    public function __construct(LoggerInterface $logger, PHPExcelFactory $phpExcel)
+    public function __construct(LoggerInterface $logger, $handle = null)
     {
         parent::__construct($logger);
-        $this->phpexcel = $phpExcel;
-        \PHPExcel_Shared_Font::setAutoSizeMethod(\PHPExcel_Shared_Font::AUTOSIZE_METHOD_EXACT);
+        $this->handle = (is_null($handle)) ? new Spreadsheet() : $handle;
+        Font::setAutoSizeMethod(Font::AUTOSIZE_METHOD_EXACT);
     }
 
     /**
      * Initialize the excel writer
      *
      * @param string $filepath
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setup($filepath)
     {
-        $this->handle = $this->phpexcel->createPHPExcelObject();
-        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(\PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+        $this->handle->getActiveSheet()->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
         $this->filepath = $filepath;
     }
 
@@ -47,9 +50,10 @@ class ExcelWriter extends AbstractWriter
     /**
      * Create a new worksheet, and set it as the active one
      *
-     * @param int    $index Location at which to create the sheet (NULL for last)
+     * @param int $index Location at which to create the sheet (NULL for last)
      * @param string $title The title of the sheet
-     * @throws \PHPExcel_Exception
+     *
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setWorksheet($index, $title)
     {
@@ -63,6 +67,8 @@ class ExcelWriter extends AbstractWriter
      * Set the title for the current active worksheet
      *
      * @param string $title
+     *
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function setSheetTitle($title)
     {
@@ -75,7 +81,7 @@ class ExcelWriter extends AbstractWriter
      * @param $headers
      * @param $initRow
      *
-     * @throws \PHPExcel_Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function writeHeaders($headers, $initRow = null)
     {
@@ -126,7 +132,7 @@ class ExcelWriter extends AbstractWriter
             $worksheet->getStyle($cell)->getFont()->setBold(true);
         }
 
-        $worksheet->calculateColumnWidths(true);
+        $worksheet->calculateColumnWidths();
 
         $this->currentRow = $initRow + (($hasMultiRowHeaders) ? 2 : 1);
     }
@@ -262,7 +268,6 @@ class ExcelWriter extends AbstractWriter
      * Freeze panes at the given location so they stay fixed upon scroll
      *
      * @param string $cell
-     * @throws \PHPExcel_Exception
      */
     public function freezePanes($cell = '')
     {
@@ -276,20 +281,17 @@ class ExcelWriter extends AbstractWriter
      * Add a horizonal (row) page break for print layout
      *
      * @param string $cell
-     * @throws \PHPExcel_Exception
      */
     public function addHorizontalPageBreak($cell = '')
     {
         if (empty($cell)) {
             $cell = 'A' . ($this->currentRow - 2);
         }
-        $this->handle->getActiveSheet()->setBreak($cell, \PHPExcel_Worksheet::BREAK_ROW);
+        $this->handle->getActiveSheet()->setBreak($cell, Worksheet::BREAK_ROW);
     }
 
     /**
      * Save the current data into an .xlsx file
-     *
-     * @throws \PHPExcel_Exception
      */
     public function finalize()
     {
@@ -297,7 +299,7 @@ class ExcelWriter extends AbstractWriter
         $this->handle->setActiveSheetIndex(0);
 
         // Write the file to disk
-        $writer = $this->phpexcel->createWriter($this->handle, 'Excel2007');
+        $writer = new Xlsx($this->handle);
         $writer->save($this->filepath);
     }
 
