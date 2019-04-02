@@ -1,6 +1,7 @@
 <?php
 
-use Xola\ReportWriterBundle\Service\AbstractWriter;
+use Psr\Log\LoggerInterface;
+use Xola\ReportWriterBundle\PHPExcelFactory;
 use Xola\ReportWriterBundle\Service\ExcelWriter;
 
 class ExcelWriterTest extends PHPUnit_Framework_TestCase
@@ -15,14 +16,16 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
 
     public function buildService($params = [])
     {
-        $defaults = ['logger' => $this->getMockBuilder('Psr\Log\LoggerInterface')->disableOriginalConstructor()->getMock()];
+        $defaults = ['logger' => $this->getMockBuilder(LoggerInterface::class)->disableOriginalConstructor()->getMock()];
         if(!isset($params['phpExcel'])) {
-            $defaults['phpExcel'] = $this->getPHPExcelMock();
+            $defaults['phpExcel'] = $this->getMockBuilder(PHPExcelFactory::class)->disableOriginalConstructor()->getMock();
         }
 
         $params = array_merge($defaults, $params);
 
-        return new ExcelWriter($params['logger'], $params['phpExcel']);
+        $service = new ExcelWriter($params['logger'], $params['phpExcel']);
+        $this->setHandle($service);
+        return $service;
     }
 
     public function testShouldInitializePHPExcelObject()
@@ -33,8 +36,10 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $worksheetMock = $this->getMockBuilder('\PHPExcel_Worksheet')->disableOriginalConstructor()->getMock();
         $worksheetMock->expects($this->once())->method('getPageSetup')->willReturn($pageSetupMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
+        $phpExcel = $this->getMockBuilder(PHPExcelFactory::class)->disableOriginalConstructor()->getMock();
+        $phpExcel->expects($this->once())->method('createPHPExcelObject')->willReturn($this->phpExcelHandleMock);
 
-        $this->buildService()->setup("filename.xlsx");
+        $this->buildService(['phpExcel' => $phpExcel])->setup("filename.xlsx");
     }
 
     public function testShouldSetPropertiesForExcelFile()
@@ -48,7 +53,9 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $propertiesMock->expects($this->once())->method('setTitle')->with($title)->willReturn($propertiesMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getProperties')->willReturn($propertiesMock);
 
-        $this->buildService()->setProperties($author, $title);
+        $service = $this->buildService();
+
+        $service->setProperties($author, $title);
     }
 
     public function testShouldSetCurrentWorksheet()
@@ -221,7 +228,8 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $worksheetMock->expects($this->once())->method('getPageSetup')->willReturn($pageSetupMock);
         $this->phpExcelHandleMock->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
 
-        $phpExcel = $this->getPHPExcelMock();
+        $phpExcel = $this->getMockBuilder(PHPExcelFactory::class)->disableOriginalConstructor()->getMock();
+        $phpExcel->expects($this->once())->method('createPHPExcelObject')->willReturn($this->phpExcelHandleMock);
         $phpExcel->expects($this->once())->method('createWriter')
             ->with($this->phpExcelHandleMock, 'Excel2007')
             ->willReturn($writerMock);
@@ -232,11 +240,11 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
         $service->finalize();
     }
 
-    private function getPHPExcelMock()
+    private function setHandle($service)
     {
-        $phpExcel = $this->getMockBuilder('Xola\ReportWriterBundle\PHPExcelFactory')->disableOriginalConstructor()->getMock();
-        $phpExcel->expects($this->once())->method('createPHPExcelObject')->willReturn($this->phpExcelHandleMock);
-
-        return $phpExcel;
+        $reflectionClass = new ReflectionClass(ExcelWriter::class);
+        $property = $reflectionClass->getProperty('handle');
+        $property->setAccessible(true);
+        $property->setValue($service, $this->phpExcelHandleMock);
     }
 }
