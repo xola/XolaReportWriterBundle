@@ -6,7 +6,6 @@ class CSVWriterTest extends PHPUnit_Framework_TestCase
 {
     /** @var CSVWriter */
     private $writer;
-    private $handle;
     private $testfilename;
 
     public function setUp()
