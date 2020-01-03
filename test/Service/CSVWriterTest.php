@@ -9,7 +9,7 @@ class CSVWriterTest extends TestCase
     private $writer;
     private $testfilename;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->writer = $this->buildService();
         $this->testfilename = uniqid() . ".csv";

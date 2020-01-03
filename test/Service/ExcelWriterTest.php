@@ -10,10 +10,10 @@ use Xola\ReportWriterBundle\SpreadsheetFactory;
 
 class ExcelWriterTest extends TestCase
 {
-    /* @var Spreadsheet| */
+    /* @var Spreadsheet */
     private $spreadsheet;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->spreadsheet = $this->getMockBuilder(Spreadsheet::class)->disableOriginalConstructor()->getMock();
     }
