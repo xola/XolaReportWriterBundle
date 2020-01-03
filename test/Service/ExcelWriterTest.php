@@ -13,7 +13,7 @@ class ExcelWriterTest extends TestCase
     /* @var Spreadsheet| */
     private $spreadsheet;
 
-    public function setUp()
+    protected function setUp()
     {
         $this->spreadsheet = $this->getMockBuilder(Spreadsheet::class)->disableOriginalConstructor()->getMock();
     }
