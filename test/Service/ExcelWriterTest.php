@@ -3,13 +3,14 @@
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Xola\ReportWriterBundle\Service\ExcelWriter;
 use Xola\ReportWriterBundle\SpreadsheetFactory;
 
-class ExcelWriterTest extends PHPUnit_Framework_TestCase
+class ExcelWriterTest extends TestCase
 {
-    /* @var Spreadsheet|\PHPUnit_Framework_MockObject_MockObject */
+    /* @var Spreadsheet| */
     private $spreadsheet;
 
     public function setUp()
@@ -19,7 +20,7 @@ class ExcelWriterTest extends PHPUnit_Framework_TestCase
 
     public function buildService($params = [])
     {
-        $defaults = ['logger' => $this->getMock(LoggerInterface::class)];
+        $defaults = ['logger' => $this->createMock(LoggerInterface::class)];
         if(!isset($params['phpExcel'])) {
             $defaults['phpExcel'] = $this->getSpreadsheetFactoryMock();
         }

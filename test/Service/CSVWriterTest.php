@@ -1,27 +1,28 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use Xola\ReportWriterBundle\Service\CSVWriter;
 
-class CSVWriterTest extends PHPUnit_Framework_TestCase
+class CSVWriterTest extends TestCase
 {
     /** @var CSVWriter */
     private $writer;
     private $testfilename;
 
-    public function setUp()
+    protected function setUp()
     {
         $this->writer = $this->buildService();
         $this->testfilename = uniqid() . ".csv";
         $this->writer->setup($this->testfilename);
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
         $this->writer->finalize();
         unlink($this->testfilename);
     }
 
-    public function buildService($params = [])
+    private function buildService($params = [])
     {
         $defaults = ['logger' => $this->getMockBuilder('Psr\Log\LoggerInterface')->disableOriginalConstructor()->getMock()];
         $params = array_merge($defaults, $params);
