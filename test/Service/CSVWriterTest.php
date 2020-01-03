@@ -16,7 +16,7 @@ class CSVWriterTest extends TestCase
         $this->writer->setup($this->testfilename);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         $this->writer->finalize();
         unlink($this->testfilename);
