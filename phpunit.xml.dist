@@ -7,11 +7,11 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="false"
-         bootstrap="bootstrap.php">
+         bootstrap="test/bootstrap.php">
 
     <testsuites>
         <testsuite name="all">
-            <directory>.</directory>
+            <directory>test</directory>
         </testsuite>
     </testsuites>
 
