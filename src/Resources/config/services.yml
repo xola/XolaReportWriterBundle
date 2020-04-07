@@ -5,16 +5,16 @@ parameters:
 
 services:
     csvwriter:
-        class: %csvwriter.service.class%
-        arguments: [ @logger ]
+        class: "%csvwriter.service.class%"
+        arguments: [ "@logger" ]
         tags:
               - { name: monolog.logger, channel: csvwriter }
 
     excelwriter:
         class: %excelwriter.service.class%
-        arguments: [ @logger, @phpexcel ]
+        arguments: [ "@logger", "@phpexcel" ]
         tags:
               - { name: monolog.logger, channel: excelwriter }
 
     phpexcel:
-        class: %phpexcel.class%
+        class: "%phpexcel.class%"
