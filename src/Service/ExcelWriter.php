@@ -179,9 +179,9 @@ class ExcelWriter extends AbstractWriter
             if (is_string($dataRow) && $dataRow == '---') {
                 $range = $this->getCellRange(0, $this->currentRow - 1, count($sortedHeaders) - 1);
                 $this->spreadsheet->getActiveSheet()->getStyle($range)->getBorders()->getBottom()->setBorderStyle(true);
+            } else {
+                $this->writeRow($dataRow, $sortedHeaders);
             }
-
-            $this->writeRow($dataRow, $sortedHeaders);
             $file->next();
         }
 
