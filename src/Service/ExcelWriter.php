@@ -175,6 +175,12 @@ class ExcelWriter extends AbstractWriter
         $file = new \SplFileObject($cacheFile);
         while (!$file->eof()) {
             $dataRow = json_decode($file->current(), true);
+
+            if (is_string($dataRow) && $dataRow == '---') {
+                $range = $this->getCellRange(0, $this->currentRow - 1, count($sortedHeaders) - 1);
+                $this->spreadsheet->getActiveSheet()->getStyle($range)->getBorders()->getBottom()->setBorderStyle(true);
+            }
+
             $this->writeRow($dataRow, $sortedHeaders);
             $file->next();
         }
@@ -220,6 +226,25 @@ class ExcelWriter extends AbstractWriter
         }
 
         $this->writeArrays($excelRow);
+        if (isset($dataRow['_bold']) && $dataRow['_bold']) {
+            $range = $this->getCellRange(0, $this->currentRow - 1, count($headers) - 1);
+            $this->spreadsheet->getActiveSheet()->getStyle($range)->getFont()->setBold(true);
+        }
+    }
+
+    /**
+     * Converts number coordinates to Excel cell range
+     * E.g. getCellRange(0, 5, 9, 6) returns A5:J6
+     *
+     * @param $startCol
+     * @param $startRow
+     * @param $endCol
+     * @param $endRow
+     * @return string
+     */
+    private function getCellRange($startCol, $startRow, $endCol, $endRow = null)
+    {
+        return chr(65 + $startCol) . $startRow . ':' . chr(65 + $endCol) . (is_null($endRow) ? $startRow : $endRow);
     }
 
     /**
