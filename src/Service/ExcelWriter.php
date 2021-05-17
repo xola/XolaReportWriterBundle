@@ -16,6 +16,10 @@ class ExcelWriter extends AbstractWriter
     private $spreadsheet;
     private $currentRow = 1;
 
+    /**
+     * Separates sections of the report.
+     * The spreadsheet will have a bottom border on the row preceding this separator.
+     */
     const SEPARATOR = '---';
 
     public function __construct(LoggerInterface $logger, SpreadsheetFactory $phpExcel)
