@@ -178,6 +178,7 @@ class ExcelWriter extends AbstractWriter
         while (!$file->eof()) {
             $dataRow = json_decode($file->current(), true);
 
+            // Row of data is represented by an array of values. If the $dataRow is a separator string, add a border.
             if (is_string($dataRow) && $dataRow == self::SEPARATOR) {
                 $this->addBottomBorder(0, $this->currentRow - 1, count($sortedHeaders) - 1);
             } else {
