@@ -16,6 +16,8 @@ class ExcelWriter extends AbstractWriter
     private $spreadsheet;
     private $currentRow = 1;
 
+    const SEPARATOR = '---';
+
     public function __construct(LoggerInterface $logger, SpreadsheetFactory $phpExcel)
     {
         parent::__construct($logger);
@@ -176,9 +178,8 @@ class ExcelWriter extends AbstractWriter
         while (!$file->eof()) {
             $dataRow = json_decode($file->current(), true);
 
-            if (is_string($dataRow) && $dataRow == '---') {
-                $range = $this->getCellRange(0, $this->currentRow - 1, count($sortedHeaders) - 1);
-                $this->spreadsheet->getActiveSheet()->getStyle($range)->getBorders()->getBottom()->setBorderStyle(true);
+            if (is_string($dataRow) && $dataRow == self::SEPARATOR) {
+                $this->addBottomBorder(0, $this->currentRow - 1, count($sortedHeaders) - 1);
             } else {
                 $this->writeRow($dataRow, $sortedHeaders);
             }
@@ -230,6 +231,20 @@ class ExcelWriter extends AbstractWriter
             $range = $this->getCellRange(0, $this->currentRow - 1, count($headers) - 1);
             $this->spreadsheet->getActiveSheet()->getStyle($range)->getFont()->setBold(true);
         }
+    }
+
+    /**
+     * Adds a bottom border to a section defined by numerical coordinates
+     *
+     * @param $startCol
+     * @param $startRow
+     * @param $endCol
+     * @param $endRow
+     */
+    private function addBottomBorder($startCol, $startRow, $endCol, $endRow = null)
+    {
+        $range = $this->getCellRange($startCol, $startRow, $endCol, $endRow);
+        $this->spreadsheet->getActiveSheet()->getStyle($range)->getBorders()->getBottom()->setBorderStyle(true);
     }
 
     /**
