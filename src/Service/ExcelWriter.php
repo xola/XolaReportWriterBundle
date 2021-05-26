@@ -16,6 +16,12 @@ class ExcelWriter extends AbstractWriter
     private $spreadsheet;
     private $currentRow = 1;
 
+    /**
+     * Separates sections of the report.
+     * The spreadsheet will have a bottom border on the row preceding this separator.
+     */
+    const SEPARATOR = '---';
+
     public function __construct(LoggerInterface $logger, SpreadsheetFactory $phpExcel)
     {
         parent::__construct($logger);
@@ -175,7 +181,13 @@ class ExcelWriter extends AbstractWriter
         $file = new \SplFileObject($cacheFile);
         while (!$file->eof()) {
             $dataRow = json_decode($file->current(), true);
-            $this->writeRow($dataRow, $sortedHeaders);
+
+            // Row of data is represented by an array of values. If the $dataRow is a separator string, add a border.
+            if (is_string($dataRow) && $dataRow == self::SEPARATOR) {
+                $this->addBottomBorder(0, $this->currentRow - 1, count($sortedHeaders) - 1);
+            } else {
+                $this->writeRow($dataRow, $sortedHeaders);
+            }
             $file->next();
         }
 
@@ -220,6 +232,39 @@ class ExcelWriter extends AbstractWriter
         }
 
         $this->writeArrays($excelRow);
+        if (isset($dataRow['_bold']) && $dataRow['_bold']) {
+            $range = $this->getCellRange(0, $this->currentRow - 1, count($headers) - 1);
+            $this->spreadsheet->getActiveSheet()->getStyle($range)->getFont()->setBold(true);
+        }
+    }
+
+    /**
+     * Adds a bottom border to a section defined by numerical coordinates
+     *
+     * @param $startCol
+     * @param $startRow
+     * @param $endCol
+     * @param $endRow
+     */
+    private function addBottomBorder($startCol, $startRow, $endCol, $endRow = null)
+    {
+        $range = $this->getCellRange($startCol, $startRow, $endCol, $endRow);
+        $this->spreadsheet->getActiveSheet()->getStyle($range)->getBorders()->getBottom()->setBorderStyle(true);
+    }
+
+    /**
+     * Converts number coordinates to Excel cell range
+     * E.g. getCellRange(0, 5, 9, 6) returns A5:J6
+     *
+     * @param $startCol
+     * @param $startRow
+     * @param $endCol
+     * @param $endRow
+     * @return string
+     */
+    private function getCellRange($startCol, $startRow, $endCol, $endRow = null)
+    {
+        return chr(65 + $startCol) . $startRow . ':' . chr(65 + $endCol) . (is_null($endRow) ? $startRow : $endRow);
     }
 
     /**
