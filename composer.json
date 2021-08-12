@@ -3,7 +3,7 @@
     "description": "A generic report writer",
     "require": {
         "php": ">=7.1",
-        "symfony/framework-bundle": ">=2.1 <4.0",
+        "symfony/framework-bundle": ">=2.1",
         "psr/log": "~1.0",
         "phpoffice/phpspreadsheet": "^1.3"
     },
