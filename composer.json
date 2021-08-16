@@ -2,6 +2,7 @@
     "name": "xola/reportwriter-bundle",
     "description": "A generic report writer",
     "require": {
+        "ext-json": "*",
         "php": ">=7.1",
         "symfony/framework-bundle": ">=2.1",
         "psr/log": "~1.0",

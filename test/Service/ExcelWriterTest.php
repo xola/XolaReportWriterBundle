@@ -60,9 +60,7 @@ class ExcelWriterTest extends TestCase
     {
         $index = 0;
         $title = 'Hello World';
-
-        // Setup all the mocks
-        $worksheetMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock = $this->getMockBuilder(Worksheet::class)->disableOriginalConstructor()->getMock();
         $worksheetMock->expects($this->once())->method('setTitle')->with($title);
         $this->spreadsheet->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
         $this->spreadsheet->expects($this->once())->method('createSheet')->with($index);
@@ -71,7 +69,7 @@ class ExcelWriterTest extends TestCase
         $service = $this->buildService();
 
         $service->setWorksheet($index, $title);
-        $this->assertAttributeEquals(1, 'currentRow', $service, 'Row should be reset to 1 when switching active sheets');
+        $this->assertEquals(1, $service->getCurrentRow(), 'Row should be reset to 1 when switching active sheets');
     }
 
     public function testShouldWriteSingleRowHeaders()

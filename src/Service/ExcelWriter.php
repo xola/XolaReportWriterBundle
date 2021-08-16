@@ -376,4 +376,9 @@ class ExcelWriter extends AbstractWriter
 
         return $str;
     }
+
+    public function getCurrentRow(): int
+    {
+        return $this->currentRow;
+    }
 }
