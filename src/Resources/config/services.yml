@@ -11,7 +11,7 @@ services:
               - { name: monolog.logger, channel: csvwriter }
 
     excelwriter:
-        class: %excelwriter.service.class%
+        class: "%excelwriter.service.class%"
         arguments: [ "@logger", "@phpexcel" ]
         tags:
               - { name: monolog.logger, channel: excelwriter }
