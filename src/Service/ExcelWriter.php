@@ -93,7 +93,6 @@ class ExcelWriter extends AbstractWriter
     public function writeHeaders($headers, $initRow = null)
     {
         $worksheet = $this->spreadsheet->getActiveSheet();
-        $hasMultiRowHeaders = $this->hasMultiRowHeaders($headers);
 
         if ($initRow) {
             $worksheet->insertNewRowBefore($initRow, 1);
@@ -107,29 +106,17 @@ class ExcelWriter extends AbstractWriter
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
                 $worksheet->getColumnDimension($column)->setAutoSize(true);
-                if ($hasMultiRowHeaders) {
-                    // These set of headers contain multi-row headers. So this cell needs to be merged with cell in the
-                    // row below it.
-                    $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow + 1));
-                }
                 $column++;
             } else {
-                // This is a multi-row header, the first row consists of one value merged across several cells and the
-                // second row contains the "children".
+                // No more multi-row headers, we are going to flatten nested headers as single header row
+                // We only consider "children" for headers ignoring parent header name completely.
 
-                // Write the first row of the header
                 $arrKeys = array_keys($header);
                 $headerName = reset($arrKeys);
-                $worksheet->setCellValue($cell, $headerName);
 
-                // Figure out how many cells across to merge
-                $mergeLength = count($header[$headerName]) - 1;
-                $mergeDestination = $this->incrementColumn($column, $mergeLength);
-                $worksheet->mergeCells($column . $initRow . ':' . $mergeDestination . $initRow);
-
-                // Now write the children's values onto the second row
+                // Now write the children's values as flattened header in the row
                 foreach ($header[$headerName] as $subHeaderName) {
-                    $worksheet->setCellValue($column . ($initRow + 1), $subHeaderName);
+                    $worksheet->setCellValue($column . $initRow, $subHeaderName);
                     $worksheet->getColumnDimension($column)->setAutoSize(true);
                     $column++;
                 }
@@ -141,7 +128,7 @@ class ExcelWriter extends AbstractWriter
 
         $worksheet->calculateColumnWidths();
 
-        $this->currentRow = $initRow + (($hasMultiRowHeaders) ? 2 : 1);
+        $this->currentRow = $initRow + 1;
     }
 
     /**

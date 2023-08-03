@@ -97,7 +97,7 @@ class ExcelWriterTest extends TestCase
         $this->buildService()->writeHeaders($headers);
     }
 
-    public function testShouldWriteNestedHeaders()
+    public function testShouldWriteFlattenedNestedHeadersWithoutParentHeader()
     {
         $columnDimensionMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\ColumnDimension')->disableOriginalConstructor()->getMock();
         $columnDimensionMock->expects($this->exactly(6))->method('setAutoSize')->with(true);
@@ -109,13 +109,10 @@ class ExcelWriterTest extends TestCase
 
         $worksheetMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet')->disableOriginalConstructor()->getMock();
         $worksheetMock->expects($this->exactly(5))->method('getStyle')->willReturn($phpExcelStyleMock);
-        $worksheetMock->expects($this->exactly(7))->method('setCellValue')->withConsecutive(
-            ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta'], ['E1', 'Echo'],
-            ['E2', 'Foxtrot'], ['F2', 'Hotel']
+        $worksheetMock->expects($this->exactly(6))->method('setCellValue')->withConsecutive(
+            ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta'], ['E1', 'Foxtrot'], ['F1', 'Hotel']
         );
-        $worksheetMock->expects($this->exactly(5))->method('mergeCells')->withConsecutive(
-            ['A1:A2'], ['B1:B2'], ['C1:C2'], ['D1:D2'], ['E1:F1']
-        );
+        $worksheetMock->expects($this->exactly(0))->method('mergeCells');
         $worksheetMock->expects($this->exactly(6))->method('getColumnDimension')->withConsecutive(
             ['A'], ['B'], ['C'], ['D'], ['E'], ['F']
         )->willReturn($columnDimensionMock);
