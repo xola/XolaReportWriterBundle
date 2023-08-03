@@ -308,7 +308,7 @@ class ExcelWriter extends AbstractWriter
     public function freezePanes($cell = '')
     {
         if (empty($cell)) {
-            $cell = 'A3';
+            $cell = 'A2'; // A2 will freeze the rows above cell A2 (i.e row 1)
         }
         $this->spreadsheet->getActiveSheet()->freezePane($cell);
     }

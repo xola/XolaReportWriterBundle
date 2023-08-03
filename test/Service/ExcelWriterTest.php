@@ -179,7 +179,7 @@ class ExcelWriterTest extends TestCase
     public function testShouldFreezePanes()
     {
         $worksheetMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet')->disableOriginalConstructor()->getMock();
-        $worksheetMock->expects($this->once())->method('freezePane')->with('A3');
+        $worksheetMock->expects($this->once())->method('freezePane')->with('A2');
         $this->spreadsheet->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
 
         $this->buildService()->freezePanes();
