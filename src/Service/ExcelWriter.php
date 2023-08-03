@@ -106,6 +106,8 @@ class ExcelWriter extends AbstractWriter
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
                 $worksheet->getColumnDimension($column)->setAutoSize(true);
+                // Mark headers as bold
+                $worksheet->getStyle($cell)->getFont()->setBold(true);
                 $column++;
             } else {
                 // No more multi-row headers, we are going to flatten nested headers as single header row
@@ -116,14 +118,14 @@ class ExcelWriter extends AbstractWriter
 
                 // Now write the children's values as flattened header in the row
                 foreach ($header[$headerName] as $subHeaderName) {
-                    $worksheet->setCellValue($column . $initRow, $subHeaderName);
+                    $cell = $column . $initRow;
+                    $worksheet->setCellValue($cell, $subHeaderName);
                     $worksheet->getColumnDimension($column)->setAutoSize(true);
+                    // Mark child headers as bold
+                    $worksheet->getStyle($cell)->getFont()->setBold(true);
                     $column++;
                 }
             }
-
-            // Mark headers as bold
-            $worksheet->getStyle($cell)->getFont()->setBold(true);
         }
 
         $worksheet->calculateColumnWidths();
