@@ -192,7 +192,8 @@ class ExcelWriter extends AbstractWriter
     {
         $this->writeHeaders($sortedHeaders, null, $flattenHeaders);
         if($freezeHeaders) {
-            $this->freezePanes();
+            //if $flattenHeaders true, freeze the rows above cell A2 (i.e row 1)
+            $flattenHeaders ? $this->freezePanes('A2') : $this->freezePanes();
         }
 
         $file = new \SplFileObject($cacheFile);
@@ -338,7 +339,7 @@ class ExcelWriter extends AbstractWriter
     public function freezePanes($cell = '')
     {
         if (empty($cell)) {
-            $cell = 'A2'; // A2 will freeze the rows above cell A2 (i.e row 1)
+            $cell = 'A3'; // A3 will freeze the rows above cell A3 (i.e row 2)
         }
         $this->spreadsheet->getActiveSheet()->freezePane($cell);
     }
