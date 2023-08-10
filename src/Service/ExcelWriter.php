@@ -87,10 +87,11 @@ class ExcelWriter extends AbstractWriter
      *
      * @param $headers
      * @param $initRow
+     * @param $flattenHeaders
      *
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function writeHeaders($headers, $initRow = null)
+    public function writeHeaders($headers, $initRow = null, $flattenHeaders = false)
     {
         $worksheet = $this->spreadsheet->getActiveSheet();
         $hasMultiRowHeaders = $this->hasMultiRowHeaders($headers);
@@ -107,41 +108,56 @@ class ExcelWriter extends AbstractWriter
             if (!is_array($header)) {
                 $worksheet->setCellValue($cell, $header);
                 $worksheet->getColumnDimension($column)->setAutoSize(true);
-                if ($hasMultiRowHeaders) {
+                if ($hasMultiRowHeaders && !$flattenHeaders) {
                     // These set of headers contain multi-row headers. So this cell needs to be merged with cell in the
                     // row below it.
                     $worksheet->mergeCells($column . $initRow . ':' . $column . ($initRow + 1));
                 }
+                // Mark headers as bold
+                $worksheet->getStyle($cell)->getFont()->setBold(true);
                 $column++;
             } else {
-                // This is a multi-row header, the first row consists of one value merged across several cells and the
-                // second row contains the "children".
 
-                // Write the first row of the header
                 $arrKeys = array_keys($header);
                 $headerName = reset($arrKeys);
-                $worksheet->setCellValue($cell, $headerName);
 
-                // Figure out how many cells across to merge
-                $mergeLength = count($header[$headerName]) - 1;
-                $mergeDestination = $this->incrementColumn($column, $mergeLength);
-                $worksheet->mergeCells($column . $initRow . ':' . $mergeDestination . $initRow);
+                if ($flattenHeaders) {
+                    // If $flattenHeaders true, we are going to flatten nested headers as single header row
+                    // We only consider "children" for headers ignoring parent header name completely.
 
-                // Now write the children's values onto the second row
-                foreach ($header[$headerName] as $subHeaderName) {
-                    $worksheet->setCellValue($column . ($initRow + 1), $subHeaderName);
-                    $worksheet->getColumnDimension($column)->setAutoSize(true);
-                    $column++;
+                    // Now write the children's values as flattened header in the row
+                    foreach ($header[$headerName] as $subHeaderName) {
+                        $cell = $column . $initRow;
+                        $worksheet->setCellValue($cell, $subHeaderName);
+                        $worksheet->getColumnDimension($column)->setAutoSize(true);
+                        // Mark child headers as bold
+                        $worksheet->getStyle($cell)->getFont()->setBold(true);
+                        $column++;
+                    }
+                } else {
+                    $worksheet->setCellValue($cell, $headerName);
+
+                    // Figure out how many cells across to merge
+                    $mergeLength = count($header[$headerName]) - 1;
+                    $mergeDestination = $this->incrementColumn($column, $mergeLength);
+                    $worksheet->mergeCells($column . $initRow . ':' . $mergeDestination . $initRow);
+
+                    // Now write the children's values onto the second row
+                    foreach ($header[$headerName] as $subHeaderName) {
+                        $worksheet->setCellValue($column . ($initRow + 1), $subHeaderName);
+                        $worksheet->getColumnDimension($column)->setAutoSize(true);
+                        $column++;
+                    }
+
+                    // Mark parent headers as bold
+                    $worksheet->getStyle($cell)->getFont()->setBold(true);
                 }
             }
-
-            // Mark headers as bold
-            $worksheet->getStyle($cell)->getFont()->setBold(true);
         }
 
         $worksheet->calculateColumnWidths();
 
-        $this->currentRow = $initRow + (($hasMultiRowHeaders) ? 2 : 1);
+        $this->currentRow = $initRow + (($hasMultiRowHeaders && !$flattenHeaders) ? 2 : 1);
     }
 
     /**
@@ -169,13 +185,15 @@ class ExcelWriter extends AbstractWriter
      * @param string $cacheFile Filename where the fetched data can be cached from
      * @param array $sortedHeaders Headers to write sorted in the order you want them
      * @param bool $freezeHeaders True if you want to freeze headers (default: false)
+     * @param bool $flattenHeaders True if you want to flatten nested headers (default: false)
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function prepare($cacheFile, $sortedHeaders, $freezeHeaders = false)
+    public function prepare($cacheFile, $sortedHeaders, $freezeHeaders = false, $flattenHeaders = false)
     {
-        $this->writeHeaders($sortedHeaders);
+        $this->writeHeaders($sortedHeaders, null, $flattenHeaders);
         if($freezeHeaders) {
-            $this->freezePanes();
+            //if $flattenHeaders true, freeze the rows above cell A2 (i.e row 1)
+            $flattenHeaders ? $this->freezePanes('A2') : $this->freezePanes();
         }
 
         $file = new \SplFileObject($cacheFile);
@@ -321,7 +339,7 @@ class ExcelWriter extends AbstractWriter
     public function freezePanes($cell = '')
     {
         if (empty($cell)) {
-            $cell = 'A3';
+            $cell = 'A3'; // A3 will freeze the rows above cell A3 (i.e row 2)
         }
         $this->spreadsheet->getActiveSheet()->freezePane($cell);
     }

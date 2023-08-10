@@ -95,7 +95,7 @@ class ExcelWriterTest extends TestCase
         $this->buildService()->writeHeaders($headers);
     }
 
-    public function testShouldWriteNestedHeaders()
+    public function testShouldWriteNestedHeadersIfFlattenHeadersIsNotSet()
     {
         $columnDimensionMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\ColumnDimension')->disableOriginalConstructor()->getMock();
         $columnDimensionMock->expects($this->exactly(6))->method('setAutoSize')->with(true);
@@ -121,6 +121,32 @@ class ExcelWriterTest extends TestCase
 
         $headers = [0 => 'Alpha', 1 => 'Bravo', 2 => 'Gamma', 3 => 'Delta', 4 => ['Echo' => ['Foxtrot', 'Hotel']]];
         $this->buildService()->writeHeaders($headers);
+    }
+
+
+    public function testShouldWriteFlattenedNestedHeadersWithoutParentHeaderIfFlattenHeadersIsTrue()
+    {
+        $columnDimensionMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\ColumnDimension')->disableOriginalConstructor()->getMock();
+        $columnDimensionMock->expects($this->exactly(6))->method('setAutoSize')->with(true);
+
+        $phpExcelStyleMock2 = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Style\Font')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock2->expects($this->exactly(6))->method('setBold')->with(true);
+        $phpExcelStyleMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Style\Style')->disableOriginalConstructor()->getMock();
+        $phpExcelStyleMock->expects($this->exactly(6))->method('getFont')->willReturn($phpExcelStyleMock2);
+
+        $worksheetMock = $this->getMockBuilder('\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet')->disableOriginalConstructor()->getMock();
+        $worksheetMock->expects($this->exactly(6))->method('getStyle')->willReturn($phpExcelStyleMock);
+        $worksheetMock->expects($this->exactly(6))->method('setCellValue')->withConsecutive(
+            ['A1', 'Alpha'], ['B1', 'Bravo'], ['C1', 'Gamma'], ['D1', 'Delta'], ['E1', 'Foxtrot'], ['F1', 'Hotel']
+        );
+        $worksheetMock->expects($this->exactly(0))->method('mergeCells');
+        $worksheetMock->expects($this->exactly(6))->method('getColumnDimension')->withConsecutive(
+            ['A'], ['B'], ['C'], ['D'], ['E'], ['F']
+        )->willReturn($columnDimensionMock);
+        $this->spreadsheet->expects($this->once())->method('getActiveSheet')->willReturn($worksheetMock);
+
+        $headers = [0 => 'Alpha', 1 => 'Bravo', 2 => 'Gamma', 3 => 'Delta', 4 => ['Echo' => ['Foxtrot', 'Hotel']]];
+        $this->buildService()->writeHeaders($headers, null, true);
     }
 
     public function testShouldWriteNonNestedData()
