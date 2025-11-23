@@ -1,0 +1,39 @@
+name: CI
+
+on:
+    push:
+        branches: [master, symfony-5.4]
+    pull_request:
+        branches: [master]
+
+jobs:
+    tests:
+        name: PHP ${{ matrix.php }} / Symfony ${{ matrix.symfony }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ["7.4"]
+                symfony: ["5.4"]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+                  tools: composer
+
+            - name: Validate Composer
+              run: composer validate --no-check-publish
+
+            - name: Require Symfony version constraint
+              run: composer require --no-update symfony/framework-bundle:${{ matrix.symfony }}
+
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress --no-interaction
+
+            - name: Run tests
+              run: composer test
